@@ -8,6 +8,12 @@ mkdir -p /tmp/boot/boot
 cat > /tmp/boot/boot/olpc.fth <<'EOF'
 \ OLPC XO boot script
 
+: enable-output ( -- )
+  " /" find-device " model" get-property if
+    false  else   " olpc,XO" 2swap sindex
+  then if  " visible unfreeze" eval  then
+;
+
 : check-ofw-version ( -- )
    " /" find-device " compatible" get-property
    abort" No compatible property on /" ( -- compatible$ )
@@ -67,7 +73,7 @@ cat > /tmp/boot/boot/olpc.fth <<'EOF'
    free-mem
 ;
 
-visible unfreeze
+enable-output
 check-ofw-version
 " last:\extlinux\extlinux.conf" load-extlinux-conf
 boot
