@@ -126,7 +126,7 @@ while [ $# -gt 0 ]; do
 			RELABEL=1
 			;;
 		--version)
-			echo "$(basename ${0})-"$VERSION""
+			echo "$(basename ${0})-$VERSION"
 			exit 0
 			;;
 		-y)
@@ -172,8 +172,9 @@ if [ "$MEDIA" = "/dev/sda" ]; then
 	echo " ** Do you wish to continue? (type 'yes' to continue)"
 	echo " ***********************************************************"
 	# wait for agreement
-	read -p " = Continue? " AGREE
-	if [ "$(echo ${AGREE} | tr [:lower:] [:upper:])" != "YES" ]; then
+	printf " = Continue? "
+	read AGREE
+	if [ "$(echo ${AGREE} | tr '[:lower:]' '[:upper:]')" != "YES" ]; then
 		echo "User exit, no image written."
 		exit 0
 	fi
@@ -185,7 +186,7 @@ if [ "$TARGET" = "cubietruck" ]; then
 fi
 
 # check for boards
-if [ "$TARGET" != "" -a ! -e "${BOARDDIR}/${TARGET}" ]; then
+if [ "$TARGET" != "" ] && ! [ -e "${BOARDDIR}/${TARGET}" ]; then
 	echo "Error: You must choose a supported board or none at all."
 	usage
 	exit 1
@@ -267,16 +268,17 @@ if [ "$NOASK" != 1 ]; then
 	echo " Type 'YES' to proceed, anything else to exit now "
 	echo " "
 	# wait for agreement
-	read -p "= Proceed? " PROCEED
-	if [ "$(echo ${PROCEED} | tr [:lower:] [:upper:])" != "YES" ]; then
+	printf "= Proceed? "
+	read PROCEED
+	if [ "$(echo ${PROCEED} | tr '[:lower:]' '[:upper:]')" != "YES" ]; then
 		echo "User exit, no image written."
 		exit 0
 	fi
 fi
 # umount before starting
-umount $MEDIA* &> /dev/null
+umount $MEDIA* > /dev/null 2>&1
 if [ "$(fdisk -l $MEDIA | grep LVM)" != "" ]   ; then
-	vgchange -a n $(pvs 2> /dev/null | grep $MEDIA | awk '{print $2}') &> /dev/null
+	vgchange -a n "$(pvs 2> /dev/null | grep $MEDIA | awk '{print $2}')" > /dev/null 2>&1
 fi
 
 # Write the disk image to media
@@ -347,7 +349,7 @@ if [ "$RESIZEFS" != "" ]; then
 		while [ $? != '0' ]; do
 			sleep 5
 			echo ", +" | sfdisk -N "4" "$MEDIA"
-			((count++))
+			count=$((count + 1))
 			if [ $count -gt 5 ]; then
 				echo "= Partition Resize Failed."
 				continue
@@ -359,7 +361,7 @@ if [ "$RESIZEFS" != "" ]; then
 			while [ $? != '0' ]; do
 				sleep 5
 				echo ", +" | sfdisk -N "$PARTNUM" "$MEDIA"
-				((count++))
+				count=$((count + 1))
 				if [ $count -gt 5 ]; then
 					echo "= Partition Resize Failed."
 					continue
@@ -378,13 +380,13 @@ if [ "$RESIZEFS" != "" ]; then
 		fi
 
 		get_lvm_name
-		vgchange -a n $LVM_NAME &> /dev/null
+		vgchange -a n $LVM_NAME > /dev/null 2>&1
 
 		echo ", +" | sfdisk -N "$PARTNUM" "$MEDIA"
 		while [ $? != '0' ]; do
 			sleep 5
 			echo ", +" | sfdisk -N "$PARTNUM" "$MEDIA"
-			((count++))
+			count=$((count + 1))
 			if [ $count -gt 5 ]; then
 				echo "= Partition Resize Failed."
 				continue
@@ -393,7 +395,7 @@ if [ "$RESIZEFS" != "" ]; then
 		sleep 5
 		partprobe "$MEDIA"
 		if [ "$LVM_NAME" != "" ]; then
-			vgchange -a y $LVM_NAME &> /dev/null
+			vgchange -a y $LVM_NAME > /dev/null 2>&1
 			pvresize "$ROOTPART"
 			lvextend -l +100%FREE /dev/$LVM_NAME/root
 			ROOTPART="/dev/$LVM_NAME/root"
@@ -402,12 +404,12 @@ if [ "$RESIZEFS" != "" ]; then
 
 	FS_TYPE=$(blkid "$ROOTPART" -s TYPE -o value)
 	if [ "$FS_TYPE" = "xfs" ] && [ "$LVM_NAME" != "" ]; then
-		mkdir /tmp/root &> /dev/null
-		mount "$ROOTPART" /tmp/root &> /dev/null
+		mkdir /tmp/root > /dev/null 2>&1
+		mount "$ROOTPART" /tmp/root > /dev/null 2>&1
 		xfs_growfs /tmp/root
 	elif [ "$FS_TYPE" = "btrfs" ]; then
-		mkdir /tmp/root &> /dev/null
-		mount "$ROOTPART" /tmp/root &> /dev/null
+		mkdir /tmp/root > /dev/null 2>&1
+		mount "$ROOTPART" /tmp/root > /dev/null 2>&1
 		btrfs filesystem resize max /tmp/root
 		BTRFS=1
 	elif [ "$FS_TYPE" = "ext4" ]; then
@@ -419,8 +421,8 @@ fi
 sleep 5
 
 # make temp mount points
-mkdir /tmp/{boot,root,fw} &> /dev/null
-mount "$BOOTPART" /tmp/boot &> /dev/null
+mkdir /tmp/boot /tmp/root /tmp/fw > /dev/null 2>&1
+mount "$BOOTPART" /tmp/boot > /dev/null 2>&1
 if [ $? -ne 0 ]; then
 	echo "Error: mount $BOOTPART /tmp/boot failed"
 	exit 1
@@ -433,12 +435,12 @@ fi
 
 if [ "$RESIZEFS" = "" ]; then
 	get_lvm_name
-	vgchange -a y $LVM_NAME &> /dev/null
+	vgchange -a y $LVM_NAME > /dev/null 2>&1
 fi
 
 if [ "$(grep /tmp/root /proc/mounts)" = "" ]; then
 	if [ "$LVM_NAME" != "" ]; then
-		mount "/dev/$LVM_NAME/root" /tmp/root &> /dev/null
+		mount "/dev/$LVM_NAME/root" /tmp/root > /dev/null 2>&1
 	else
         	mount "$ROOTPART" /tmp/root
 	fi
@@ -467,7 +469,7 @@ fi
 
 # determine uboot and write to disk
 if [ "$TARGET" != "" ]; then
-	if [[ "$TARGET" == rpi[2,3,4] ]] || [ "$TARGET" = "olpc_xo175" ]; then
+	if echo "$TARGET" | grep -q 'rpi[234]' || [ "$TARGET" = "olpc_xo175" ]; then
 		. "${BOARDDIR}/${TARGET}"
 	elif [ -d "${PREFIX}/usr/share/uboot/${TARGET}" ]; then
 		. "${BOARDDIR}/${TARGET}"
@@ -481,11 +483,11 @@ fi
 
 # turn off selinux
 if [ "$SELINUX" != "" ]; then
-	if [ "$(echo ${SELINUX} | tr [:lower:] [:upper:])" = "OFF" ]; then
+	if [ "$(echo ${SELINUX} | tr '[:lower:]' '[:upper:]')" = "OFF" ]; then
 		echo "= Turning SELinux off ..."
 		sed -i 's/SELINUX=enforcing/SELINUX=permissive/' ${PREFIX}/etc/selinux/config
 		# turn on selinux
-	elif [ "$(echo ${SELINUX} | tr [:lower:] [:upper:])" = "ON" ]; then
+	elif [ "$(echo ${SELINUX} | tr '[:lower:]' '[:upper:]')" = "ON" ]; then
 		echo "= Turning SELinux on ..."
 		sed -i 's/SELINUX=permissive/SELINUX=enforcing/' ${PREFIX}/etc/selinux/config
 	fi
@@ -508,11 +510,11 @@ if [ "$SSH_KEY" != "" ]; then
 	if [ -f $SSH_KEY ]; then
 		echo "= Adding SSH key to authorized keys."
 		if [ "$IOT_IMAGE" = "1" ]; then
-			mkdir $OSTREE_ROOT_HOME/.ssh/ &> /dev/null
+			mkdir $OSTREE_ROOT_HOME/.ssh/ > /dev/null 2>&1
 			cat $SSH_KEY >> $OSTREE_ROOT_HOME/.ssh/authorized_keys
 			chmod -R u=rwX,o=,g= $OSTREE_ROOT_HOME/.ssh/
 		else
-			mkdir ${PREFIX}/root/.ssh/ &> /dev/null
+			mkdir ${PREFIX}/root/.ssh/ > /dev/null 2>&1
 			cat $SSH_KEY >> ${PREFIX}/root/.ssh/authorized_keys
 			chmod -R u=rwX,o=,g= ${PREFIX}/root/.ssh/
 		fi
@@ -532,7 +534,7 @@ if [ "$CONSOLE" = "1" ]; then
 	echo "= Adding console $SYSCON to kernel parameters ..."
 	add_kernel_parameter "console=$SYSCON console=tty0"
 
-	if [[ "$TARGET" == rpi[2,3,4] ]]; then
+	if echo "$TARGET" | grep -q 'rpi[234]'; then
 		sed -i "s|# enable_uart=1|enable_uart=1|" /tmp/fw/config.txt
 	fi
 fi
@@ -568,11 +570,11 @@ fi
 
 sync
 
-umount /tmp/root $BOOTPART $FIRMPART &> /dev/null
+umount /tmp/root $BOOTPART $FIRMPART > /dev/null 2>&1
 if [ "$LVM_NAME" != "" ]; then
-	vgchange -a n $LVM_NAME &> /dev/null
+	vgchange -a n $LVM_NAME > /dev/null 2>&1
 fi
-rmdir  /tmp/root /tmp/boot /tmp/fw &> /dev/null
+rmdir  /tmp/root /tmp/boot /tmp/fw > /dev/null 2>&1
 
 if [ "$URL" != "" ]; then
 	echo
@@ -583,5 +585,5 @@ if [ "$URL" != "" ]; then
 fi
 
 echo ""
-echo "= Installation Complete! Insert into the "$TARGET" and boot."
+echo "= Installation Complete! Insert into the $TARGET and boot."
 exit 0
