@@ -58,49 +58,73 @@ while [ $# -gt 0 ]; do
 		--target*)
 			if echo $1 | grep '=' >/dev/null ; then
 				TARGET=$(echo $1 | sed 's/^--target=//')
-			else
+			elif [ -n "$2" ]; then
 				TARGET=$2
 				shift
+			else
+				echo "$(basename ${0}): Error - '--target' expects an argument"
+				usage
+				exit 1
 			fi
 			;;
 		--image*)
 			if echo $1 | grep '=' >/dev/null ; then
 				IMAGE=$(echo $1 | sed 's/^--image=//')
-			else
+			elif [ -n "$2" ]; then
 				IMAGE=$2
 				shift
+			else
+				echo "$(basename ${0}): Error - '--image' expects an argument"
+				usage
+				exit 1
 			fi
 			;;
 		--media*)
 			if echo $1 | grep '=' >/dev/null ; then
 				MEDIA=$(echo $1 | sed 's/^--media=//')
-			else
+			elif [ -n "$2" ]; then
 				MEDIA=$2
 				shift
+			else
+				echo "$(basename ${0}): Error - '--media' expects an argument"
+				usage
+				exit 1
 			fi
 			;;
 		--addkey*)
 			if echo $1 | grep '=' >/dev/null ; then
 				SSH_KEY=$(echo $1 | sed 's/^--addkey=//')
-			else
+			elif [ -n "$2" ]; then
 				SSH_KEY=$2
 				shift
+			else
+				echo "$(basename ${0}): Error - '--addkey' expects an argument"
+				usage
+				exit 1
 			fi
 			;;
 		--selinux*)
 			if echo $1 | grep '=' >/dev/null ; then
 				SELINUX=$(echo $1 | sed 's/^--selinux=//')
-			else
+			elif [ -n "$2" ]; then
 				SELINUX=$2
 				shift
+			else
+				echo "$(basename ${0}): Error - '--selinux' expects an argument"
+				usage
+				exit 1
 			fi
 			;;
 		--args*)
 			if echo $1 | grep '=' >/dev/null ; then
 				OPT_ARGS=$(echo $1 | sed 's/^--args=//')
-			else
+			elif [ -n "$2" ]; then
 				OPT_ARGS=$2
 				shift
+			else
+				echo "$(basename ${0}): Error - '--args' expects an argument"
+				usage
+				exit 1
 			fi
 			;;
 		--norootpass)
