@@ -10,7 +10,7 @@ cat > /tmp/boot/boot/olpc.fth <<'EOF'
 
 : enable-output ( -- )
   " /" find-device " model" get-property if
-    false  else   " olpc,XO" 2swap sindex
+     false  else  " olpc,XO" 2swap sindex -1 <>
   then if  " visible unfreeze" eval  then
 ;
 
@@ -19,12 +19,12 @@ cat > /tmp/boot/boot/olpc.fth <<'EOF'
    abort" No compatible property on /" ( -- compatible$ )
 
    \ Good compatible strings
-   " mrvl,mmp2"    2over sindex  if  2drop exit  then
-   " marvell,mmp3" 2over sindex  if  2drop exit  then
+   " mrvl,mmp2"    2over sindex -1 <>  if  2drop exit  then
+   " marvell,mmp3" 2over sindex -1 <>  if  2drop exit  then
 
    \ Try to be helpful
    cr
-   " olpc,xo-1.75" 2swap sindex if
+   " olpc,xo-1.75" 2swap sindex -1 <>  if
      ." Firmware Q4E00 or newer is needed to boot a Devicetree enabled kernel." cr
      cr
      ." One way to update is to copy http://dev.laptop.org/~quozl/q4e00ja.rom" cr
