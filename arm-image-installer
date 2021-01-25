@@ -298,12 +298,23 @@ get_lvm_name () {
 	fi
 }
 
+add_bls_parameter()
+{
+	for bls in /tmp/boot/loader/entries/*.conf; do
+		sed -i "s|options|& $1|" ${bls}
+	done
+}
+
 add_kernel_parameter () {
 	if [ -f /tmp/boot/extlinux/extlinux.conf ]; then
 		sed -i "s|append|& $1 |" /tmp/boot/extlinux/extlinux.conf
 	elif [ -f /tmp/fw/EFI/fedora/grub.cfg ]; then
 		sed -i "s|GRUB_CMDLINE_LINUX=\"|& $1 |" ${PREFIX}/etc/default/grub
-		sed -i "s|kernelopts=|& $1 |" /tmp/fw/EFI/fedora/grubenv
+		if grep -q '^kernelopts=' /tmp/fw/EFI/fedora/grubenv; then
+			sed -i "s|kernelopts=|& $1 |" /tmp/fw/EFI/fedora/grubenv
+		else
+			add_bls_parameter "$1"
+		fi
 	fi
 }
 
