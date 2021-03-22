@@ -149,6 +149,9 @@ while [ $# -gt 0 ]; do
 		--relabel)
 			RELABEL=1
 			;;
+		--lpae)
+                        LPAE=1
+                        ;;
 		--version)
 			echo "$(basename ${0})-$VERSION"
 			exit 0
@@ -279,6 +282,10 @@ fi
 # User ssh key
 if [ "$SSH_KEY" != "" ]; then
 	echo "= SSH Public Key $SSH_KEY will be added."
+fi
+# Use the lpae kernel
+if [ "$LPAE" != "" ]; then
+        echo "= The LPAE kernel will be the default."
 fi
 echo "====================================================="
 echo " "
@@ -602,7 +609,11 @@ if [ "$OPT_ARGS" != "" ] ; then
 	echo "= Parameter: $OPT_ARGS"
 	add_kernel_parameter "$OPT_ARGS"
 fi
-
+# prefer the lpae kernel
+if [ "$LPAE" != "" ]; then
+	if [ -f ${PREFIX}/boot/grub2/grubenv ]; then
+		sed 's|^saved_entry.*|&+lpae|' ${PREFIX}/boot/grub2/grubenv
+fi
 sync
 
 umount /tmp/root $BOOTPART $FIRMPART > /dev/null 2>&1
