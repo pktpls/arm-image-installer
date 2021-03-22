@@ -18,9 +18,11 @@ Optional
 	--addconsole    - Add system console kernel parameter for the target
 	--addkey        - /path/to/ssh-public-key
 	--args          - Optional kernel parameters listed in quotes
+	--lpae		- lpae to be the default kernel (armhfp only)
 	--norootpass    - Remove the root password
 	--relabel       - SELinux relabel root filesystem on first boot
 	--resizefs      - Resize root filesystem to fill media device
+	--showboot	- Show boot messages, removes 'quiet' from kargs
 	--sysrq         - Enable System Request debugging of the kernel
 	--target=TARGET - target board for uboot
 	-y              - Assumes yes, will not wait for confirmation
@@ -152,6 +154,9 @@ while [ $# -gt 0 ]; do
 		--lpae)
                         LPAE=1
                         ;;
+		--showboot)
+			SHOWBOOT=1
+			;;
 		--version)
 			echo "$(basename ${0})-$VERSION"
 			exit 0
@@ -286,6 +291,10 @@ fi
 # Use the lpae kernel
 if [ "$LPAE" != "" ]; then
         echo "= The LPAE kernel will be the default."
+fi
+# show boot messages
+if [ "$SHOWBOOT" != "" ]; then
+        echo "= Boot messages will be shown onscreen."
 fi
 echo "====================================================="
 echo " "
@@ -614,6 +623,10 @@ if [ "$LPAE" != "" ]; then
 	if [ -f /tmp/boot/grub2/grubenv ]; then
 		sed -i 's|^saved_entry.*|&+lpae|' /tmp/boot/grub2/grubenv
 	fi
+fi
+# remove quiet from kargs
+if [ "$SHOWBOOT" != "" ]; then
+		 sed -i 's|rhgb quiet ||g' /tmp/boot/loader/entries/*.conf
 fi
 
 sync
