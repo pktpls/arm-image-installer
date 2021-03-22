@@ -22,7 +22,7 @@ Optional
 	--norootpass    - Remove the root password
 	--relabel       - SELinux relabel root filesystem on first boot
 	--resizefs      - Resize root filesystem to fill media device
-	--showboot	- Show boot messages, removes 'quiet' from kargs
+	--showboot	- Show boot messages, removes 'rhgb quiet' from kargs
 	--sysrq         - Enable System Request debugging of the kernel
 	--target=TARGET - target board for uboot
 	-y              - Assumes yes, will not wait for confirmation
