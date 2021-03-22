@@ -611,9 +611,11 @@ if [ "$OPT_ARGS" != "" ] ; then
 fi
 # prefer the lpae kernel
 if [ "$LPAE" != "" ]; then
-	if [ -f ${PREFIX}/boot/grub2/grubenv ]; then
-		sed 's|^saved_entry.*|&+lpae|' ${PREFIX}/boot/grub2/grubenv
+	if [ -f /tmp/boot/grub2/grubenv ]; then
+		sed -i 's|^saved_entry.*|&+lpae|' /tmp/boot/grub2/grubenv
+	fi
 fi
+
 sync
 
 umount /tmp/root $BOOTPART $FIRMPART > /dev/null 2>&1
