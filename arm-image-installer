@@ -18,7 +18,6 @@ Optional
 	--addconsole    - Add system console kernel parameter for the target
 	--addkey        - /path/to/ssh-public-key
 	--args          - Optional kernel parameters listed in quotes
-	--lpae		- lpae to be the default kernel (armhfp only)
 	--norootpass    - Remove the root password
 	--relabel       - SELinux relabel root filesystem on first boot
 	--resizefs      - Resize root filesystem to fill media device
