@@ -1,0 +1,146 @@
+#!/bin/sh
+# Copyright (C) 2021 Red Hat Inc.
+# SPDX-License-Identifier:  GPL-2.0
+
+# This script will create a U-Boot image, generally for a MMC boot
+# to start U-Boot and allow the user to write out a firmware to
+# SPI flash. It's generally used once and discarded.
+
+# usage message
+usage() {
+    echo "
+Usage: $(basename ${0}) <options>
+
+	--media=DEVICE	- media device file (/dev/[sdX|mmcblkX])
+	--target=TARGET	- target board
+
+optional
+        --tag=KOJI TAG  - koji tag to download build
+
+Example: $(basename ${0}) --target=panda --media=/dev/mmcblk0
+
+For list of supported boards please check SUPPORTED-BOARDS file.
+The devices must have on board SPI flash and support enabled for it.
+"
+}
+
+# check the args
+while [ $# -gt 0 ]; do
+	case $1 in
+		--debug)
+			set -x
+			;;
+		-h|--help)
+			usage
+			;;
+		--target*)
+			if echo $1 | grep '=' >/dev/null ; then
+				TARGET=$(echo $1 | sed 's/^--target=//')
+			else
+				TARGET=$2
+				shift
+			fi
+			;;
+		--media*)
+			if echo $1 | grep '=' >/dev/null ; then
+				MEDIA=$(echo $1 | sed 's/^--media=//')
+			else
+				MEDIA=$2
+				shift
+			fi
+			;;
+		--tag*)
+			if echo $1 | grep '=' >/dev/null ; then
+				KOJI_TAG=$(echo $1 | sed 's/^--tag=//')
+			else
+				KOJI_TAG=$2
+				shift
+			fi
+			;;
+		*)
+			echo "$(basename ${0}): Error - ${1}"
+			usage
+			exit 1
+			;;
+	esac
+	shift
+done
+
+if [ -d "/usr/share/arm-image-installer/boards.d" ]; then
+	BOARDDIR="/usr/share/arm-image-installer/boards.d"
+else
+	DIR=$(dirname $0)
+	BOARDDIR="${DIR}/boards.d"
+fi
+# ensure sudo user
+if [ "$(whoami)" != "root" ]; then
+	echo "Error: This script requires 'sudo' privileges in order to write to disk & mount media."
+	exit 1
+fi
+
+# check if media exists
+if [[ ! -e $MEDIA ]]; then
+	echo "Missing media"
+	usage
+	exit 1
+fi
+
+if [[ $TARGET = '' ]]; then
+	echo "Missing target"
+	usage
+	exit 1
+fi
+if [[ $KOJI_TAG != '' ]]; then
+	if [[ ! -f /usr/bin/koji ]]; then
+		echo "Please install koji-utils for this option."
+		exit 1
+	else
+		PREFIX='/tmp/root/'
+		rm -rf /tmp/root &> /dev/null
+		mkdir $PREFIX
+
+		#get the latest uboot
+		pushd $PREFIX &> /dev/null
+		if [ $KOJI_TAG = f22 ]; then
+			koji download-build --arch=armv7hl --latestfrom=$KOJI_TAG uboot-tools
+		else
+			koji download-build --arch=noarch --latestfrom=$KOJI_TAG uboot-tools
+		fi
+		# unpack uboot
+		for rpm in uboot-images*.rpm
+		do
+			rpm2cpio "${rpm}" | cpio -idv &> /dev/null
+		done
+		popd &> /dev/null
+	fi
+fi
+
+# Create a VFAT partition, 32Mb offset, 256Mb in size
+parted -s "$MEDIA" mklabel msdos
+parted -s "$MEDIA" mkpart -a cylinder primary fat32 32 256
+partprobe "$MEDIA"
+
+mkdir /tmp/fw > /dev/null 2>&1
+
+if [ -e "$MEDIA"p1 ]; then
+        mkfs.vfat "$MEDIA"p1
+        mount "$MEDIA"p1 /tmp/fw > /dev/null 2>&1
+elif [ -e "$MEDIA"1 ]; then
+        mkfs.vfat "$MEDIA"1
+        mount "$MEDIA"1 /tmp/fw > /dev/null 2>&1
+fi
+
+# determine uboot and write to disk
+if [ "$TARGET" != "" ]; then
+        if [ -d "${PREFIX}/usr/share/uboot/${TARGET}" ]; then
+                . "${BOARDDIR}/${TARGET}"
+                cp "${PREFIX}/usr/share/uboot/${TARGET}/"* /tmp/fw ## 2>&1
+                umount /tmp/fw
+        else
+                echo "= No U-Boot files found for $TARGET."
+        fi
+fi
+
+rmdir /tmp/fw
+
+# vi: tabstop=8 softtabstop=0 expandtab shiftwidth=8 smarttab
