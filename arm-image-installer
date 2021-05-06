@@ -281,7 +281,12 @@ if [ "$RESIZEFS" != "" ]; then
 fi
 # Console to be added
 if [ "$CONSOLE" != "" ]; then
-	echo "= Console for $TARGET will be added."
+	# don't add a console param for target none
+	if echo "$TARGET" | grep -q 'none'; then
+		CONSOLE=0
+	else
+		echo "= Console for $TARGET will be added."
+	fi
 fi
 # User ssh key
 if [ "$SSH_KEY" != "" ]; then
