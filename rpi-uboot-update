@@ -71,7 +71,7 @@ if [ -f /usr/share/uboot/rpi_4_32b/u-boot.bin ] && [ "$ARCH" = "armv7l" ]; then
                 cp -rp /usr/share/uboot/rpi_4_32b/u-boot.bin /boot/efi/rpi4-u-boot.bin
 fi
 # reboot after writing
-if [ "REBOOT" = "1" ]; then
+if [ "$REBOOT" = "1" ]; then
 	echo
         echo "= Complete, rebooting.."
         reboot

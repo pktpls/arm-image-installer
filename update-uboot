@@ -131,7 +131,7 @@ else
 fi
 
 # reboot after writing
-if [ "REBOOT" = "1" ]; then 
+if [ "$REBOOT" = "1" ]; then
         echo "= Complete, rebooting.."
         reboot
 else
