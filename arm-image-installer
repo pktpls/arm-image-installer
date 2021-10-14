@@ -194,11 +194,21 @@ if [ "$MEDIA" = "" ]; then
 	exit 1
 fi
 
-if [ "$MEDIA" = "/dev/sda" ]; then
+ROOTDISK="$(mount | grep "on / " | awk '{printf $1"\n"}')"
+case "$ROOTDISK" in  
+  *nvme*)
+    ROOTDISK="$(echo $ROOTDISK | head -c 10)"
+    ;;
+  *sd*)
+    ROOTDISK="$(echo $ROOTDISK | head -c 8)"
+    ;;
+esac
+
+if [ "$MEDIA" = "$ROOTDISK" ]; then
 	echo ""
 	echo " ***********************************************************"
 	echo " ** WARNING: You have requested the image be written to sda."
-	echo " ** /dev/sda is usually the root filesystem of the host. "
+	echo " ** $ROOTDISK is mounted as the root filesystem of the host."
 	echo " ***********************************************************"
 	echo " ** Do you wish to continue? (type 'yes' to continue)"
 	echo " ***********************************************************"
