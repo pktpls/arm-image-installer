@@ -70,6 +70,15 @@ fi
 if [ -f /usr/share/uboot/rpi_4_32b/u-boot.bin ] && [ "$ARCH" = "armv7l" ]; then
                 cp -rp /usr/share/uboot/rpi_4_32b/u-boot.bin /boot/efi/rpi4-u-boot.bin
 fi
+# copy firmware files if running on iot
+if [ "$(grep "VARIANT=\"IoT Edition\"" /etc/os-release)" != "" ]; then
+        echo "== Detected IoT Edition, copying Raspberry Pi firmware files."
+        if [ -d /usr/lib/ostree-boot/efi/ ]; then
+                cp -rfp /usr/lib/ostree-boot/efi/*.{bin,dat,elf} /boot/efi/
+                echo "== Copying new config.txt to config.txt.rpmnew"
+                cp -rfp /usr/lib/ostree-boot/efi/config.txt /boot/efi/config.txt.rpmnew
+        fi
+fi
 # reboot after writing
 if [ "$REBOOT" = "1" ]; then
 	echo
