@@ -1,2 +1,8 @@
 echo "= Raspberry Pi 3 Uboot is already in place, no changes needed."
-SYSCON="ttyS1,115200"
+if [ "$(echo "$IMAGE" | grep -E '(IoT|Server)')" = "" ]; then
+        # use console from kernel provided dtb
+        SYSCON="ttyS1,115200"
+else
+        # use console from firmware provided dtb for IoT and Server images
+        SYSCON="ttyS0,115200"
+fi
