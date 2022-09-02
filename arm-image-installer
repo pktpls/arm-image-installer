@@ -404,6 +404,11 @@ else
 	PARTNUM=3
 fi
 
+FS_TYPE=$(blkid "$ROOTPART" -s TYPE -o value)
+if [ "$FS_TYPE" = "btrfs" ]; then
+	BTRFS=1
+fi
+
 # resize root filesystem before mounting
 if [ "$RESIZEFS" != "" ]; then
 	echo "= Resizing $MEDIA ...."
