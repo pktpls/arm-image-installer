@@ -1,0 +1,10 @@
+
+echo "= Writing idbloader.img for $TARGET .... on media $MEDIA"
+wget -O /tmp/nanopi-r5s.idbloader.img https://github.com/inindev/nanopi-r5/releases/download/v12-rc3/idbloader.img
+dd bs=4K seek=8 if=/tmp/nanopi-r5s.idbloader.img of=$MEDIA ; sync ; sleep 5
+
+echo "= Writing u-boot FIT image for $TARGET .... on media $MEDIA"
+wget -O /tmp/nanopi-r5s.u-boot.itb https://github.com/inindev/nanopi-r5/releases/download/v12-rc3/u-boot.itb
+dd bs=4K seek=2048 if=/tmp/nanopi-r5s.u-boot.itb of=$MEDIA ; sync ; sleep 5
+
+SYSCON=ttyS2,1500000n8
